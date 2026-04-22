@@ -35,12 +35,12 @@ db.serialize(() => {
 
   db.run(`
     CREATE TABLE IF NOT EXISTS messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      mentorship_id INTEGER,
-      sender_id INTEGER,
-      message TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mentorship_id INTEGER,
+  sender_id INTEGER,
+  message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
   `);
 
   db.run("PRAGMA foreign_keys = ON");

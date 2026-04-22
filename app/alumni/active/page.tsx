@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, User as UserIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useSearchParams } from "next/navigation";
 
 interface Mentorship {
     id: number
@@ -43,7 +44,17 @@ export default function ActiveMentorshipPage() {
             fetchActiveMentorships(parsedUser.id)
         }
     }, [])
+    const params = useSearchParams();
+    const id = params.get("id");
 
+    useEffect(() => {
+        if (id && mentorships.length) {
+            const selected = mentorships.find(m => m.id === Number(id));
+            if (selected) {
+                setSelectedMentorship(selected);
+            }
+        }
+    }, [id, mentorships]);
     // Auto-scroll to bottom of chat
     useEffect(() => {
         if (scrollRef.current) {
@@ -104,8 +115,16 @@ export default function ActiveMentorshipPage() {
             })
 
             if (res.ok) {
+                const newMsg = {
+                    id: Date.now().toString(),
+                    sender_id: currentUser.id,
+                    sender_name: currentUser.name,
+                    message: newMessage,
+                    created_at: new Date().toISOString()
+                }
+
+                setMessages(prev => [...prev, newMsg])  // ✅ instant UI update
                 setNewMessage("")
-                fetchMessages(selectedMentorship.id) // Refresh immediately
             }
         } catch (err) {
             console.error(err)

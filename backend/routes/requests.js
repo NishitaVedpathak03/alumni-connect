@@ -101,4 +101,30 @@ router.get("/:id", (req, res) => {
   );
 });
 
+// ✅ GET ACTIVE MENTORSHIPS (ALUMNI)
+router.get("/active/:alumniId", (req, res) => {
+  const { alumniId } = req.params;
+
+  db.all(
+    `SELECT mr.id, mr.status, mr.created_at,
+            u.name as student_name,
+            u.email as student_email,
+            u.id as student_id
+     FROM mentorship_requests mr
+     JOIN users u ON mr.student_id = u.id
+     WHERE mr.alumni_id = ?
+     AND mr.status = 'ACCEPTED'
+     ORDER BY mr.created_at DESC`,
+    [alumniId],
+    (err, rows) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
 module.exports = router;

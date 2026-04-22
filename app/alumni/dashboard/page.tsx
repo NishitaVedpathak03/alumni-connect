@@ -159,7 +159,7 @@ export default function AlumniDashboard() {
                                         {req.status === "ACCEPTED" && (
                                             <Button
                                                 size="sm"
-                                                onClick={() => router.replace(`/alumni/chat/${req.student_id}`)}
+                                                onClick={() => router.push(`/alumni/active?id=${req.id}`)}
                                             >
                                                 Open Chat
                                             </Button>
