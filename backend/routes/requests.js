@@ -1,100 +1,104 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../db");
-
+const db = require("../db");
 
 // ✅ CREATE REQUEST
-router.post("/", async (req, res) => {
+router.post("/", (req, res) => {
   const { student_id, alumni_id, message } = req.body;
 
-  try {
-    const result = await pool.query(
-      `INSERT INTO mentorship_requests (student_id, alumni_id, message, status)
-       VALUES ($1, $2, $3, 'PENDING')
-       RETURNING id, student_id, alumni_id, status`,
-      [student_id, alumni_id, message]
-    );
+  db.run(
+    `INSERT INTO mentorship_requests (student_id, alumni_id, message, status)
+     VALUES (?, ?, ?, 'PENDING')`,
+    [student_id, alumni_id, message],
+    function (err) {
+      if (err) {
+        console.error(err);
+        return res.status(500).json(err);
+      }
 
-    res.json(result.rows[0]);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-// ✅ GET requests for ALUMNI (incoming)
-router.get("/alumni/:alumniId", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT mr.id, mr.status, mr.created_at,
-              u.name as student_name,
-              u.email as student_email,
-              u.id as student_id
-       FROM mentorship_requests mr
-       JOIN users u ON mr.student_id = u.id
-       WHERE mr.alumni_id = $1
-       ORDER BY mr.created_at DESC`,
-      [req.params.alumniId]
-    );
-
-    res.json(result.rows);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-// ✅ GET requests for STUDENT (outgoing) ⭐ FIXED
-router.get("/student/:studentId", async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT mr.id, mr.status, mr.created_at,
-              u.name as alumni_name,
-              u.email as alumni_email,
-              u.id as alumni_id
-       FROM mentorship_requests mr
-       JOIN users u ON mr.alumni_id = u.id
-       WHERE mr.student_id = $1
-       ORDER BY mr.created_at DESC`,
-      [req.params.studentId]
-    );
-
-    res.json(result.rows);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-// ✅ UPDATE request (Accept / Reject)
-router.patch("/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    if (!["ACCEPTED", "REJECTED"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
+      res.json({
+        id: this.lastID,
+        student_id,
+        alumni_id,
+        status: "PENDING"
+      });
     }
+  );
+});
 
-    const result = await pool.query(
-      `UPDATE mentorship_requests
-       SET status = $1
-       WHERE id = $2
-       RETURNING *`,
-      [status, req.params.id]
-    );
+// ✅ GET requests for ALUMNI
+router.get("/alumni/:alumniId", (req, res) => {
+  db.all(
+    `SELECT mr.id, mr.status, mr.created_at,
+            u.name as student_name,
+            u.email as student_email,
+            u.id as student_id
+     FROM mentorship_requests mr
+     JOIN users u ON mr.student_id = u.id
+     WHERE mr.alumni_id = ?
+     ORDER BY mr.created_at DESC`,
+    [req.params.alumniId],
+    (err, rows) => {
+      if (err) return res.status(500).json(err);
+      res.json(rows);
+    }
+  );
+});
 
-    res.json(result.rows[0]);
+// ✅ GET requests for STUDENT
+router.get("/student/:studentId", (req, res) => {
+  db.all(
+    `SELECT mr.id, mr.status, mr.created_at,
+            u.name as alumni_name,
+            u.email as alumni_email,
+            u.id as alumni_id
+     FROM mentorship_requests mr
+     JOIN users u ON mr.alumni_id = u.id
+     WHERE mr.student_id = ?
+     ORDER BY mr.created_at DESC`,
+    [req.params.studentId],
+    (err, rows) => {
+      if (err) return res.status(500).json(err);
+      res.json(rows);
+    }
+  );
+});
 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
+// ✅ UPDATE (Accept / Reject)
+router.patch("/:id", (req, res) => {
+  const { status } = req.body;
+
+  db.run(
+    `UPDATE mentorship_requests SET status = ? WHERE id = ?`,
+    [status, req.params.id],
+    function (err) {
+      if (err) return res.status(500).json(err);
+
+      res.json({ success: true });
+    }
+  );
+});
+
+// ✅ GET SINGLE MENTORSHIP (for chat)
+router.get("/:id", (req, res) => {
+  db.get(
+    `SELECT mr.*, 
+            s.name as student_name,
+            a.name as alumni_name,
+            a.id as alumni_id,
+            s.id as student_id
+     FROM mentorship_requests mr
+     JOIN users s ON mr.student_id = s.id
+     JOIN users a ON mr.alumni_id = a.id
+     WHERE mr.id = ?`,
+    [req.params.id],
+    (err, row) => {
+      if (err) return res.status(500).json(err);
+      if (!row) return res.status(404).json({ message: "Not found" });
+
+      res.json(row);
+    }
+  );
 });
 
 module.exports = router;

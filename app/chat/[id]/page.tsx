@@ -30,10 +30,12 @@ import {
 import { useParams } from "next/navigation"
 
 
-const socket = io("http://localhost:5000");
+import { useRef } from "react";
+
 
 
 export default function ChatPage() {
+  const socketRef = useRef<any>(null);
   const [chatPartner, setChatPartner] = useState<any>(null);
 
   const [user, setUser] = useState<any>(null);
@@ -45,10 +47,36 @@ export default function ChatPage() {
   useEffect(() => {
     if (!chatId) return;
 
-    fetch(`http://localhost:5000/api/users/${chatId}`)
+    socketRef.current = io("http://localhost:5000");
+
+    socketRef.current.emit("join_room", chatId);
+
+    socketRef.current.on("receive_message", (data: any) => {
+      setMessages(prev => [...prev, data]);
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
+
+  }, [chatId]);
+
+  useEffect(() => {
+    if (!chatId || !user) return;
+
+    fetch(`http://localhost:5000/api/mentorship/${chatId}`)
       .then(res => res.json())
-      .then(data => setChatPartner(data))
-  }, [chatId])
+      .then(data => {
+        console.log("MENTORSHIP:", data);
+
+        const partner =
+          user.id === data.student_id
+            ? { id: data.alumni_id, name: data.alumni_name }
+            : { id: data.student_id, name: data.student_name };
+
+        setChatPartner(partner);
+      });
+  }, [chatId, user]);
 
 
   const [messages, setMessages] = useState<any[]>([]);
@@ -67,25 +95,12 @@ export default function ChatPage() {
     setMessages(Array.isArray(data) ? data : []);
   };
 
-  useEffect(() => {
-  if (!chatId) return;
-
-  socket.emit("join_room", chatId);
-}, [chatId]);
 
   useEffect(() => {
     if (chatId) loadMessages();
   }, [chatId]);
 
-  useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setMessages(prev => [...prev, data]);
-    });
 
-    return () => {
-      socket.off("receive_message");
-    };
-  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -234,7 +249,7 @@ export default function ChatPage() {
                 if (!newMessage.trim()) return;
 
                 const messageData = {
-                  mentorship_id: chatId,   
+                  mentorship_id: chatId,
                   sender_id: user.id,
                   message: newMessage
                 };
@@ -249,7 +264,7 @@ export default function ChatPage() {
                 });
 
                 // 🔹 Send via socket
-                socket.emit("send_message", {
+                socketRef.current.emit("send_message", {
                   ...messageData,
                   chatId: chatId
                 });

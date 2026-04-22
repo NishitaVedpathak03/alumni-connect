@@ -128,7 +128,7 @@ export default function StudentDashboard() {
 
   // 2️⃣ Get users (alumni list)
   useEffect(() => {
-    fetch("http://localhost:5000/api/users")
+    fetch("http://localhost:5000/api/users/alumni")
       .then(res => res.json())
       .then(data => {
         setUsers(data);

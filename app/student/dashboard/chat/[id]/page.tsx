@@ -43,12 +43,20 @@ export default function ChatPage() {
   console.log("CHAT ID:", chatId);
 
   useEffect(() => {
-    if (!chatId) return;
+    if (!chatId || !user) return;
 
-    fetch(`http://localhost:5000/api/users/${chatId}`)
+    fetch(`http://localhost:5000/api/mentorship/${chatId}`)
       .then(res => res.json())
-      .then(data => setChatPartner(data))
-  }, [chatId])
+      .then(data => {
+        // decide who is partner
+        const partner =
+          user.id === data.student_id
+            ? { id: data.alumni_id, name: data.alumni_name }
+            : { id: data.student_id, name: data.student_name };
+
+        setChatPartner(partner);
+      });
+  }, [chatId, user]);
 
 
   const [messages, setMessages] = useState<any[]>([]);
@@ -68,24 +76,24 @@ export default function ChatPage() {
   };
 
   useEffect(() => {
-  if (!chatId) return;
+    if (!chatId) return;
 
-  socket.emit("join_room", chatId);
-}, [chatId]);
+    const socket = io("http://localhost:5000");
 
-  useEffect(() => {
-    if (chatId) loadMessages();
-  }, [chatId]);
+    socket.emit("join_room", chatId);
 
-  useEffect(() => {
     socket.on("receive_message", (data) => {
       setMessages(prev => [...prev, data]);
     });
 
+    // ✅ CLEANUP FUNCTION (IMPORTANT)
     return () => {
-      socket.off("receive_message");
+      socket.disconnect();
     };
-  }, []);
+
+  }, [chatId]);
+
+  if (!user) return <div>Loading...</div>;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -231,11 +239,11 @@ export default function ChatPage() {
               onSubmit={async (e) => {
                 e.preventDefault();
 
-                if (!newMessage.trim()) return;
+                if (!newMessage.trim() || !user) return;
 
                 const messageData = {
-                  mentorship_id: chatId,   
-                  sender_id: user.id,
+                  mentorship_id: chatId,
+                  sender_id: user?.id,
                   message: newMessage
                 };
 

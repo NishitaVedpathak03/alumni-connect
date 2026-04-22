@@ -64,7 +64,7 @@ function ConnectionCard({ connection }: { connection: any }) {
             </div>
           </div>
           <div className="flex flex-col md:items-end gap-2">
-            <Link href={`/student/chat/${connection.alumni_id}`}>
+            <Link href={`/chat/${connection.id}`}>
             <Button size="sm"><MessageSquare className="h-4 w-4 mr-2" />Open Chat</Button></Link>
             <p className="text-xs text-muted-foreground max-w-xs text-right truncate">Last message: {connection.lastMessageAt}</p>
           </div>

@@ -2,43 +2,59 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-// Create user
-router.post("/", async (req, res) => {
-    const { name, role } = req.body;
+// ✅ CREATE USER
+router.post("/", (req, res) => {
+  const { name, role } = req.body;
 
-    const result = await db.query(
-        "INSERT INTO users (name, role) VALUES ($1, $2) RETURNING *",
-        [name, role]
-    );
+  db.run(
+    "INSERT INTO users (name, role) VALUES (?, ?)",
+    [name, role],
+    function (err) {
+      if (err) return res.status(500).json(err);
 
-    res.json(result.rows[0]);
-});
-
-// Get users
-router.get("/", async (req, res) => {
-    const result = await db.query("SELECT * FROM users");
-    res.json(result.rows);
-});
-
-// 👉 GET USER BY ID
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params
-
-    const result = await db.query(
-      "SELECT id, name, email FROM users WHERE id = $1",
-      [id]
-    )
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "User not found" })
+      res.json({
+        id: this.lastID,
+        name,
+        role
+      });
     }
+  );
+});
 
-    res.json(result.rows[0])
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ message: "Server error" })
-  }
-})
+// ✅ GET ALL USERS
+router.get("/", (req, res) => {
+  db.all("SELECT * FROM users", [], (err, rows) => {
+    if (err) return res.status(500).json(err);
+    res.json(rows);
+  });
+});
+
+// ✅ 🔥 GET ONLY ALUMNI (IMPORTANT FOR YOU)
+router.get("/alumni", (req, res) => {
+  db.all(
+    "SELECT id, name, email FROM users WHERE role = ?",
+    ["alumni"],
+    (err, rows) => {
+      if (err) return res.status(500).json(err);
+      res.json(rows);
+    }
+  );
+});
+
+// ✅ GET USER BY ID
+router.get("/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.get(
+    "SELECT id, name, email FROM users WHERE id = ?",
+    [id],
+    (err, row) => {
+      if (err) return res.status(500).json(err);
+      if (!row) return res.status(404).json({ message: "User not found" });
+
+      res.json(row);
+    }
+  );
+});
 
 module.exports = router;
