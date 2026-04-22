@@ -184,36 +184,38 @@ export default function CommunityFeed() {
 
                 <div className="space-y-4">
 
-                    {currentUser?.role === "student" && alumni.map((a) => {
+                    {currentUser?.role === "student" &&
+                        Array.isArray(alumni) &&
+                        alumni.map((a) => {
 
-                        const req = requests.find(r => r.alumni_id === a.id);
+                            const req = requests.find(r => r.alumni_id === a.id);
 
-                        return (
-                            <Card key={a.id} className="mb-4">
-                                <div className="flex justify-between items-center p-4">
+                            return (
+                                <Card key={a.id} className="mb-4">
+                                    <div className="flex justify-between items-center p-4">
 
-                                    <div>
-                                        <p className="font-semibold">{a.name}</p>
-                                        <p className="text-sm text-muted-foreground">{a.email}</p>
+                                        <div>
+                                            <p className="font-semibold">{a.name}</p>
+                                            <p className="text-sm text-muted-foreground">{a.email}</p>
+                                        </div>
+
+                                        {currentUser?.role === "student" && (
+                                            <Button
+                                                onClick={() => sendRequest(a.id)}
+                                                disabled={!!req}
+                                            >
+                                                {req
+                                                    ? req.status === "ACCEPTED"
+                                                        ? "Connected"
+                                                        : "Requested"
+                                                    : "Request Mentorship"}
+                                            </Button>
+                                        )}
+
                                     </div>
-
-                                    {currentUser?.role === "student" && (
-                                        <Button
-                                            onClick={() => sendRequest(a.id)}
-                                            disabled={!!req}
-                                        >
-                                            {req
-                                                ? req.status === "ACCEPTED"
-                                                    ? "Connected"
-                                                    : "Requested"
-                                                : "Request Mentorship"}
-                                        </Button>
-                                    )}
-
-                                </div>
-                            </Card>
-                        );
-                    })}
+                                </Card>
+                            );
+                        })}
                 </div>
             </div>
             {/* Posts Feed */}
