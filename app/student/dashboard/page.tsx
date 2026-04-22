@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/status-badge"
 import Link from "next/link"
 import { Users, MessageSquare, TrendingUp, Clock, ArrowRight, Briefcase, MapPin, GraduationCap } from "lucide-react"
+import { useRouter } from "next/navigation";
 
 type AlumniType = {
   id: string;
@@ -115,6 +116,39 @@ export default function StudentDashboard() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [user, setUser] = useState<any>(null);
   const [alumni, setAlumni] = useState<any[]>([]);
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const handleAction = async (alumni: any) => {
+    const res = await fetch(
+      `http://localhost:5000/api/mentorship/student/${currentUser.id}`
+    );
+    const requests = await res.json();
+
+    const existing = requests.find(
+      (r: any) => r.alumni_id === alumni.id
+    );
+
+    if (!existing) {
+      // 👉 CREATE REQUEST
+      await fetch("http://localhost:5000/api/mentorship", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_id: currentUser.id,
+          alumni_id: alumni.id,
+          message: "Hi, I'd like mentorship"
+        })
+      });
+
+      alert("Request sent!");
+    } else if (existing.status === "ACCEPTED") {
+      // 👉 OPEN CHAT
+      router.push(`/chat/${existing.id}`);
+    } else {
+      alert("Request already pending");
+    }
+  };
 
   // 1️⃣ Get logged-in user
   useEffect(() => {
@@ -128,16 +162,25 @@ export default function StudentDashboard() {
 
   // 2️⃣ Get users (alumni list)
   useEffect(() => {
-    fetch("http://localhost:5000/api/users/alumni")
+    fetch("http://localhost:5000/api/alumni")
       .then(res => res.json())
       .then(data => {
-        setUsers(data);
+        console.log("ALUMNI RESPONSE:", data);
 
-        // 🔥 THIS LINE IS IMPORTANT
-        setAlumni(data.filter((u: any) => u.role?.toUpperCase() === "ALUMNI"));
+        // ✅ FORCE ARRAY
+        if (Array.isArray(data)) {
+          setAlumni(data);
+        } else if (Array.isArray(data.users)) {
+          setAlumni(data.users);
+        } else {
+          setAlumni([]); // fallback
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        setAlumni([]);
       });
   }, []);
-
 
   // 3️⃣ Get requests (ONLY after user is ready)
   useEffect(() => {
@@ -183,7 +226,10 @@ export default function StudentDashboard() {
       console.error(err);
     }
   };
+
+
   return (
+
     <div className="min-h-screen bg-background">
       <Navigation />
       <main className="container mx-auto px-4 py-8">
@@ -222,13 +268,15 @@ export default function StudentDashboard() {
         </div>
 
 
+
+
         <div className="bg-white rounded-xl shadow p-4">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-lg font-semibold">Alumni</h2>
           </div>
 
           <div className="space-y-4">
-            {alumni.map((a) => {
+            {Array.isArray(alumni) && alumni.map((a: any) => {
               const req = requests.find(r => r.alumni_id === a.id);
 
               return (
@@ -242,16 +290,24 @@ export default function StudentDashboard() {
                   </div>
 
                   <button
-                    onClick={() => sendRequest(a.id)}
-                    disabled={!!req}
+                    onClick={() => {
+                      if (!req) {
+                        sendRequest(a.id); // create request
+                      } else if (req.status === "ACCEPTED") {
+                        router.push(`/chat/${req.id}`); // ✅ OPEN CHAT
+                      }
+                    }}
+                    disabled={req?.status === "PENDING"}
                     className={`px-4 py-1 rounded text-sm ${req
-                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      ? req.status === "ACCEPTED"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-300 text-gray-600 cursor-not-allowed"
                       : "bg-blue-600 text-white"
                       }`}
                   >
                     {req
                       ? req.status === "ACCEPTED"
-                        ? "Connected"
+                        ? "Open Chat"
                         : "Requested"
                       : "Request Mentorship"}
                   </button>

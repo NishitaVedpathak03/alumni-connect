@@ -1,19 +1,24 @@
 const express = require("express")
 const router = express.Router()
-const pool = require("../db")
+const db = require("../db")
 
-router.get("/", async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT id, name, email FROM users WHERE role = 'alumni'"
-        );
+// ✅ GET ALL ALUMNI
+router.get("/", (req, res) => {
+  db.all(
+    "SELECT id, name, email FROM users WHERE role = 'alumni'",
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error("ALUMNI ERROR:", err);
+        return res.status(500).json({ message: "Server error" });
+      }
 
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: "Server error" });
+      res.json(rows); // ✅ MUST BE ARRAY
     }
+  );
 });
+
+
 // GET profile by user_id
 router.get("/profile/:userId", async (req, res) => {
     try {
