@@ -89,7 +89,7 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navigation />
+      
 
       <main className="flex-1 container mx-auto px-4 py-6 flex flex-col max-h-[calc(100vh-4rem)]">
         <Card className="flex-1 border-0 shadow-md flex flex-col overflow-hidden">

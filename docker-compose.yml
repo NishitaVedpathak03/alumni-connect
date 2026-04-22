@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    container_name: alumni_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: alumni_connect
+    ports:
+      - "5433:5432"
+
+  backend:
+    build: ./backend   # 🔥 IMPORTANT
+    container_name: alumni_backend
+    ports:
+      - "5001:5000"
+    environment:
+      DATABASE_URL: postgres://postgres:password@db:5432/alumni_connect
+    depends_on:
+      - db

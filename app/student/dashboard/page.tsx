@@ -134,7 +134,7 @@ export default function StudentDashboard() {
         setUsers(data);
 
         // 🔥 THIS LINE IS IMPORTANT
-        setAlumni(data.filter((u: any) => u.role === "alumni"));
+        setAlumni(data.filter((u: any) => u.role?.toUpperCase() === "ALUMNI"));
       });
   }, []);
 
@@ -221,57 +221,57 @@ export default function StudentDashboard() {
           />
         </div>
 
-        
-          <div className="bg-white rounded-xl shadow p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Alumni</h2>
-            </div>
 
-            <div className="space-y-4">
-              {alumni.map((a) => {
-                const req = requests.find(r => r.alumni_id === a.id);
-
-                return (
-                  <div
-                    key={a.id}
-                    className="flex justify-between items-center p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-semibold">{a.name}</p>
-                      <p className="text-sm text-gray-500">{a.email}</p>
-                    </div>
-
-                    <button
-                      onClick={() => sendRequest(a.id)}
-                      disabled={!!req}
-                      className={`px-4 py-1 rounded text-sm ${req
-                        ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                        : "bg-blue-600 text-white"
-                        }`}
-                    >
-                      {req
-                        ? req.status === "ACCEPTED"
-                          ? "Connected"
-                          : "Requested"
-                        : "Request Mentorship"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
+        <div className="bg-white rounded-xl shadow p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold">Alumni</h2>
           </div>
 
-          <Card className="mt-6 border-0 shadow-md bg-secondary text-secondary-foreground">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div>
-                  <h3 className="font-serif text-xl font-semibold">Looking for Career Guidance?</h3>
-                  <p className="text-secondary-foreground/80 mt-1">Connect with alumni in your field for mentorship and advice.</p>
+          <div className="space-y-4">
+            {alumni.map((a) => {
+              const req = requests.find(r => r.alumni_id === a.id);
+
+              return (
+                <div
+                  key={a.id}
+                  className="flex justify-between items-center p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold">{a.name}</p>
+                    <p className="text-sm text-gray-500">{a.email}</p>
+                  </div>
+
+                  <button
+                    onClick={() => sendRequest(a.id)}
+                    disabled={!!req}
+                    className={`px-4 py-1 rounded text-sm ${req
+                      ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                      : "bg-blue-600 text-white"
+                      }`}
+                  >
+                    {req
+                      ? req.status === "ACCEPTED"
+                        ? "Connected"
+                        : "Requested"
+                      : "Request Mentorship"}
+                  </button>
                 </div>
-                <Link href="/community"><Button className="bg-accent text-accent-foreground hover:bg-accent/90">Browse Alumni Directory</Button></Link>
+              );
+            })}
+          </div>
+        </div>
+
+        <Card className="mt-6 border-0 shadow-md bg-secondary text-secondary-foreground">
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <h3 className="font-serif text-xl font-semibold">Looking for Career Guidance?</h3>
+                <p className="text-secondary-foreground/80 mt-1">Connect with alumni in your field for mentorship and advice.</p>
               </div>
-            </CardContent>
-          </Card>
+              <Link href="/community"><Button className="bg-accent text-accent-foreground hover:bg-accent/90">Browse Alumni Directory</Button></Link>
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </div>
   )
